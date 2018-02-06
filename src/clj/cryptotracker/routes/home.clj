@@ -3,7 +3,8 @@
             [compojure.core :refer [defroutes GET]]
             [ring.util.http-response :as response]
             [clojure.java.io :as io]
-            [org.httpkit.client :as http]))
+            [org.httpkit.client :as http]
+            [clojure.data.json :as json]))
 
 (defn home-page []
   (layout/render
@@ -13,9 +14,11 @@
   (layout/render "about.html"))
 
 (defn test []
-  (let [resp1 (http/get "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=3&e=CCCAGG")]
-    (println "Response 1's status: " (:status @resp1))
-    (layout/render "about.html" {:resp @resp1})))
+  (let [resp (http/get "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=3&e=CCCAGG")
+        resp2 (http/get "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=3&e=CCCAGG")]
+    (layout/render "about.html" {:resp
+      (apply str (map #(select-keys % [:time])((json/read-str (@resp :body) :key-fn keyword) :Data)))
+      })))
 
 
 
