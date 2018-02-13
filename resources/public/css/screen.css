@@ -3,6 +3,12 @@ body {
 	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     height: 100%;
 }
+.chart-container {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
 .navbar {
   margin-bottom: 10px;
   border-radius: 0px;
@@ -31,4 +37,3 @@ body {
     margin-left: 1rem;
   }
 }
-
