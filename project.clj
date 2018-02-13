@@ -26,7 +26,10 @@
                  [ring/ring-core "1.6.3"]
                  [ring/ring-defaults "0.3.1"]
                  [selmer "1.11.6"]
-                 [org.clojure/data.json "0.2.6"]]
+                 [org.clojure/data.json "0.2.6"]
+                 [hiccup "1.0.5"]
+                 [clj-template "0.9.0"]
+                 [com.hypirion/clj-xchart "0.2.0"]]
 
   :min-lein-version "2.0.0"
 
