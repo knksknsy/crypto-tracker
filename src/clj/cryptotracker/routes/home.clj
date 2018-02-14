@@ -60,12 +60,38 @@
               (include-js "/assets/bootstrap/js/bootstrap.min.js")
             ])))
 
-(def chart
+(defn format-date [unixdates]
+  (lazy-seq
+    (when-let [ss (seq unixdates)]
+      (cons  (tc/to-date (* (first unixdates) 1000 ))
+        (format-date (next unixdates)))))
+)
+
+(defn get-data-times [data]
+      (format-date (map :time  ((json/read-str (@data :body) :key-fn keyword) :Data)))
+)
+
+(defn get-data-closes [data]
+       (map :close  ((json/read-str (@data :body) :key-fn keyword) :Data))
+)
+
+(def url1  "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=1") ;BTC-USD
+(def url2  "https://min-api.cryptocompare.com/data/histoday?fsym=ETH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
+(def url3  "https://min-api.cryptocompare.com/data/histoday?fsym=DASH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
+
+(defn chart []
+  (let [resp1 (http/get url1)
+       resp2 (http/get url2)
+       resp3 (http/get url3)]
   (c/xy-chart {
-                "Cur 1" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [2 3] ]
-                "Cur 2" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [3 4] ]
-                "Dif" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [5 6] ]
-                "Rates" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [7 8] ]
+                ;"Cur 1" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [2 3] ]
+                ;"Cur 1" [ [(prepare-data-for-chart-wo-comma2 data)] [(prepare-data-for-chart-wo-comma2 data)] ]
+                ;"Cur 1"  { :x (prepare-data-for-chart-wo-comma resp1) :y (prepare-data-for-chart-wo-comma2 resp1) }
+                "Cur 2"  { :x (get-data-times resp2) :y (get-data-closes resp2) }
+                "Cur 3"  { :x (get-data-times resp3) :y (get-data-closes resp3) }
+                ;"Cur 2" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [3 4] ]
+                ;"Dif" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [5 6] ]
+                ;"Rates" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [7 8] ]
               }
               {
                 :width 800
@@ -77,9 +103,11 @@
                 :date-pattern "dd.MM.yyyy HH:mm"
               }
   )
-)
+))
+
 
 (defn page []
+  (let [resp (http/get ChartUrl2)]
   (h/html (app-head)
     (app-body
       [:div {:class "container"}
@@ -115,32 +143,9 @@
             ]
           ])
           [:div {:class "chart-container"}
-            [:img {:src (str "data:image/svg+xml;base64," (String. (Base64/encodeBase64 (c/to-bytes chart :svg)))), :class "img-responsive"}]
+            [:img {:src (str "data:image/svg+xml;base64," (String. (Base64/encodeBase64 (c/to-bytes (chart) :svg)))), :class "img-responsive"}]
           ]
-      ])))
-
-(defn parse-long-to-date [dates]
-  (apply str (map (fn [[key value]] [key (tc/to-date (* 1000 value))]) dates)))
-
-(defn home-page []
-  (page
-    (let [resp (http/get "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=3&e=CCCAGG")]
-    (apply str (map #(parse-long-to-date (select-keys % [:time]))((json/read-str (@resp :body) :key-fn keyword) :Data))))))
-
-(defn about-page []
-  (layout/render "about.html"))
-
-(defn test []
-  (let [resp (http/get "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=3&e=CCCAGG")
-        resp2 (http/get "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=3&e=CCCAGG")]
-    (layout/render "about.html" {:resp
-      (apply str (map #(parse-long-to-date (select-keys % [:time]))((json/read-str (@resp :body) :key-fn keyword) :Data)))
-      })))
-
-(defn compare []
-  (layout/render "about.html"))
+      ]))))
 
 (defroutes home-routes
-  (GET "/" [] (page))
-  (GET "/about" [] (test))
-  (GET "/compare" [] (compare)))
+  (GET "/" [] (page)))
