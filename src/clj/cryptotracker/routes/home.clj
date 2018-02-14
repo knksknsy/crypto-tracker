@@ -19,8 +19,8 @@
   ([]
     (h/html [:head
       (h/html [:meta {:http-equiv "Content-Type"
-                            :content    "text/html; charset=UTF-8"
-                            :charset    "UTF-8"}]
+                      :content    "text/html; charset=UTF-8"
+                      :charset    "UTF-8"}]
                     [:meta {:name    "viewport"
                             :content "width=device-width, initial-scale=1"}]
                     [:title "Crypto Tracker"]
@@ -31,10 +31,10 @@
     ([head-content]
       (h/html [:head
         (h/html [:meta {:http-equiv "Content-Type"
-            :content    "text/html; charset=UTF-8"
-            :charset    "UTF-8"}]
+                        :content    "text/html; charset=UTF-8"
+                        :charset    "UTF-8"}]
             [:meta {:name    "viewport"
-            :content "width=device-width, initial-scale=1"}]
+                    :content "width=device-width, initial-scale=1"}]
             [:title "Crypto Tracker"]
             (include-css "/assets/bootstrap/css/bootstrap.min.css")
             (include-css "/assets/font-awesome/web-fonts-with-css/css/fontawesome-all.min.css")
@@ -78,11 +78,13 @@
 (def url1  "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=1") ;BTC-USD
 (def url2  "https://min-api.cryptocompare.com/data/histoday?fsym=ETH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
 (def url3  "https://min-api.cryptocompare.com/data/histoday?fsym=DASH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
+(def url4 "https://www.cryptocompare.com/api/data/coinlist/"); Coinlist
 
 (defn chart []
   (let [resp1 (http/get url1)
        resp2 (http/get url2)
-       resp3 (http/get url3)]
+       resp3 (http/get url3)
+       resp4 (http/get url4)]
   (c/xy-chart {
                 ;"Cur 1" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [2 3] ]
                 ;"Cur 1" [ [(prepare-data-for-chart-wo-comma2 data)] [(prepare-data-for-chart-wo-comma2 data)] ]
@@ -107,7 +109,8 @@
 
 
 (defn page []
-  (let [resp (http/get ChartUrl2)]
+  ; (let [resp (http/get ChartUrl2)]
+
   (h/html (app-head)
     (app-body
       [:div {:class "container"}
@@ -145,7 +148,10 @@
           [:div {:class "chart-container"}
             [:img {:src (str "data:image/svg+xml;base64," (String. (Base64/encodeBase64 (c/to-bytes (chart) :svg)))), :class "img-responsive"}]
           ]
-      ]))))
+      ])))
 
 (defroutes home-routes
-  (GET "/" [] (page)))
+  (GET "/" [] (page))
+  (GET "/compare" [cur1 cur2 comp1 comp2]
+    (str "<h1>" " Currency1: " cur1 "<br>Currency2: " cur2 "<br>Option1: " comp1 "<br>Option2: " comp2 "</h1>")
+  ))
