@@ -29,7 +29,8 @@
                  [org.clojure/data.json "0.2.6"]
                  [hiccup "1.0.5"]
                  [clj-template "0.9.0"]
-                 [com.hypirion/clj-xchart "0.2.0"]]
+                 [com.hypirion/clj-xchart "0.2.0"]
+                 [clj-time "0.14.2"]]
 
   :min-lein-version "2.0.0"
 

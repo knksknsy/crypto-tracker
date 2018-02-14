@@ -10,7 +10,8 @@
             [hiccup.page :as p]
             [hiccup.element :as e]
             [compojure.core :refer :all]
-            [com.hypirion.clj-xchart :as c]))
+            [com.hypirion.clj-xchart :as c]
+            [clj-time.coerce :as tc]))
 
 (import (org.apache.commons.codec.binary Base64))
 
@@ -61,10 +62,10 @@
 
 (def chart
   (c/xy-chart {
-                "Expected rate" [ [10 9 8 7 6 5 4 3 2 2] [2 3 4 5 6 7 8 9 10 10] ]
-                "Actual rate" [ [2 3 4 5 6 7 8 9 10 11] [2 2 3 4 5 6 7 8 9 11] ]
-                "Difference" [ [2 2 3 4 5 6 7 8 9 11] [2 3 4 5 6 7 8 9 10 11] ]
-                "Price Rates" [ [2 2 3 4 5 6 7 8 9 10] [10 9 8 7 6 5 4 3 2 2] ]
+                "Cur 1" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [2 3] ]
+                "Cur 2" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [3 4] ]
+                "Dif" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [5 6] ]
+                "Rates" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [7 8] ]
               }
               {
                 :width 800
@@ -73,6 +74,7 @@
                 :x-axis {:title "Date"}
                 :y-axis {:title "Price [$]"}
                 :theme :ggplot2
+                :date-pattern "dd.MM.yyyy HH:mm"
               }
   )
 )
@@ -117,10 +119,13 @@
           ]
       ])))
 
+(defn parse-long-to-date [dates]
+  (apply str (map (fn [[key value]] [key (tc/to-date (* 1000 value))]) dates)))
+
 (defn home-page []
   (page
     (let [resp (http/get "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=3&e=CCCAGG")]
-    (apply str (map #(select-keys % [:time])((json/read-str (@resp :body) :key-fn keyword) :Data))))))
+    (apply str (map #(parse-long-to-date (select-keys % [:time]))((json/read-str (@resp :body) :key-fn keyword) :Data))))))
 
 (defn about-page []
   (layout/render "about.html"))
@@ -129,7 +134,7 @@
   (let [resp (http/get "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=3&e=CCCAGG")
         resp2 (http/get "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=3&e=CCCAGG")]
     (layout/render "about.html" {:resp
-      (apply str (map #(select-keys % [:time])((json/read-str (@resp :body) :key-fn keyword) :Data)))
+      (apply str (map #(parse-long-to-date (select-keys % [:time]))((json/read-str (@resp :body) :key-fn keyword) :Data)))
       })))
 
 (defn compare []
