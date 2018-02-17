@@ -20,6 +20,14 @@
 (def dashUrl  "https://min-api.cryptocompare.com/data/histoday?fsym=DASH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
 (def coinsUrl "https://www.cryptocompare.com/api/data/coinlist/"); Coinlist
 
+(defn prepare-data-for-exlist [data]
+  (into [] (map :FullName (vals ((json/read-str (@data :body) :key-fn keyword) :Data))))
+)
+  ;(str \[ (clojure.string/join ", " (map :FullName (vals ((json/read-str (@data :body) :key-fn keyword) :Data)))))
+  ;(str \[ (clojure.string/join ", " (map :Symbol (vals ((json/read-str (@data :body) :key-fn keyword) :Data)))))
+
+
+
 (defn average [numbers]
   (/ (apply + numbers) (count numbers))
 )
@@ -122,7 +130,7 @@
               (include-js "/assets/bootstrap/js/bootstrap.min.js")
             ])))
 
-(defn base-page [chart-container]
+(defn base-page [chart-container respCoinlist]
   (h/html (app-head)
     (app-body
       [:div {:class "container"}
@@ -130,7 +138,7 @@
           [:div {:class "form-group"}
             (label {:class "control-label"} "cur1" "Currency 1")
             [:select#cur1 {:name "cur1", :class "form-control"}
-              (select-options [["BitCoin" "BTC"] ["Ethereum" "ETH"] ["LiteCoin" "LTC"]])
+              (select-options [respCoinlist])
             ]
           ]
           [:div {:class "form-group"}
@@ -166,8 +174,8 @@
   )
 )
 
-(defn compare-page [cur1 respCur1Times respCur1Closes cur2 respCur2Times respCur2Closes]
-  (base-page
+(defn compare-page [cur1 respCur1Times respCur1Closes cur2 respCur2Times respCur2Closes respCoinlist]
+  (base-page respCoinlist
     [:div {:class "chart-container"}
       [:img {:src (str "data:image/svg+xml;base64," (String. (Base64/encodeBase64 (c/to-bytes (chart cur1 respCur1Times respCur1Closes cur2 respCur2Times respCur2Closes) :svg)))), :class "img-responsive"}]
     ]
@@ -195,8 +203,9 @@
     (let [respCur1Times   (get-data-times (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur1 "&tsym=USD&limit=" range "&aggregate=1")))
           respCur1Closes  (get-data-closes (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur1 "&tsym=USD&limit=" range "&aggregate=1")))
           respCur2Times   (get-data-times (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur2 "&tsym=USD&limit=" range "&aggregate=1")))
-          respCur2Closes  (get-data-closes (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur2 "&tsym=USD&limit=" range "&aggregate=1")))]
-      (compare-page cur1 respCur1Times respCur1Closes cur2 respCur2Times respCur2Closes)
+          respCur2Closes  (get-data-closes (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur2 "&tsym=USD&limit=" range "&aggregate=1")))
+          respCoinlist (prepare-data-for-exlist (http/get coinsUrl))]
+      (compare-page cur1 respCur1Times respCur1Closes cur2 respCur2Times respCur2Closes respCoinlist)
     )
   )
 )
