@@ -15,17 +15,19 @@
 
 (import (org.apache.commons.codec.binary Base64))
 
-(def coinsUrl "https://www.cryptocompare.com/api/data/coinlist/"); Coinlist
-(def coinList (prepare-data-for-exlist (http/get coinsUrl)))
-
 (defn prepare-data-for-exlist [data]
      (sort (map vector
        (seq (map :FullName (vals ((json/read-str (@data :body) :key-fn keyword) :Data))))
-   (seq (map :Symbol (vals ((json/read-str (@data :body) :key-fn keyword) :Data))))
+       (seq (map :Symbol (vals ((json/read-str (@data :body) :key-fn keyword) :Data))))
    ))
 )
   ;(str \[ (clojure.string/join ", " (map :FullName (vals ((json/read-str (@data :body) :key-fn keyword) :Data)))))
   ;(str \[ (clojure.string/join ", " (map :Symbol (vals ((json/read-str (@data :body) :key-fn keyword) :Data)))))
+
+
+(def coinsUrl "https://www.cryptocompare.com/api/data/coinlist/"); Coinlist
+(def coinList (prepare-data-for-exlist (http/get coinsUrl)))
+
 
 
 
