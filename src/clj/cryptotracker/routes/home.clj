@@ -26,10 +26,6 @@
 
 
 (def coinsUrl "https://www.cryptocompare.com/api/data/coinlist/"); Coinlist
-(def coinList (prepare-data-for-exlist (http/get coinsUrl)))
-
-
-
 
 (defn average [numbers]
   (/ (apply + numbers) (count numbers))
@@ -203,13 +199,13 @@
 )
 
 (defroutes home-routes
-  (GET "/" [] (home-page coinList))
+  (GET "/" [] (home-page (prepare-data-for-exlist (http/get coinsUrl))))
   (GET "/compare" [cur1 cur2 range]
     (let [respCur1Times   (get-data-times (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur1 "&tsym=USD&limit=" range "&aggregate=1")))
           respCur1Closes  (get-data-closes (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur1 "&tsym=USD&limit=" range "&aggregate=1")))
           respCur2Times   (get-data-times (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur2 "&tsym=USD&limit=" range "&aggregate=1")))
           respCur2Closes  (get-data-closes (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur2 "&tsym=USD&limit=" range "&aggregate=1")))]
-      (compare-page cur1 respCur1Times respCur1Closes cur2 respCur2Times respCur2Closes coinList)
+      (compare-page cur1 respCur1Times respCur1Closes cur2 respCur2Times respCur2Closes (prepare-data-for-exlist (http/get coinsUrl)))
     )
   )
 )
