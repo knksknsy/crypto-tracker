@@ -15,54 +15,65 @@
 
 (import (org.apache.commons.codec.binary Base64))
 
-(def url1  "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=1") ;BTC-USD
-(def url2  "https://min-api.cryptocompare.com/data/histoday?fsym=ETH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
-(def url3  "https://min-api.cryptocompare.com/data/histoday?fsym=DASH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
-(def url4 "https://www.cryptocompare.com/api/data/coinlist/"); Coinlist
+(def btcUrl   "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=1") ;BTC-USD
+(def ethUrl   "https://min-api.cryptocompare.com/data/histoday?fsym=ETH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
+(def dashUrl  "https://min-api.cryptocompare.com/data/histoday?fsym=DASH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
+(def coinsUrl "https://www.cryptocompare.com/api/data/coinlist/"); Coinlist
+
+(defn average [numbers]
+  (/ (apply + numbers) (count numbers))
+)
+
+(defn format-cur [number]
+  (str (format "%.2f" number) " $")
+)
 
 (defn chart [cur1 cur1Times cur1Closes cur2 cur2Times cur2Closes]
-  ; (let [resp1 (http/get url1)
-  ;      resp2 (http/get url2)
-  ;      resp3 (http/get url3)
-  ;      resp4 (http/get url4)]
-  (c/xy-chart {
-                ;"Cur 1" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [2 3] ]
-                ;"Cur 1" [ [(prepare-data-for-chart-wo-comma2 data)] [(prepare-data-for-chart-wo-comma2 data)] ]
-                ;"Cur 1"  { :x (prepare-data-for-chart-wo-comma resp1) :y (prepare-data-for-chart-wo-comma2 resp1) }
-                (str cur1 " ")  { :x cur1Times
-                                  :y cur1Closes
-                                  :style { :marker-type :none } }
-                (str cur2)  { :x cur2Times
-                              :y cur2Closes
-                              :style { :marker-type :none }}
-                ;"Cur 2" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [3 4] ]
-                ;"Dif" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [5 6] ]
-                ;"Rates" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [7 8] ]
-              }
-              {
-                :width 800
-                :height 350
-                :title (str "Comparison of " cur1 " and " cur2)
-                :x-axis {:title "Date"}
-                :y-axis { :title "Price [$]" :decimal-pattern "######" :tick-mark-spacing-hint 20}
-                :theme :ggplot2
-                :date-pattern "dd.MM.yyyy HH:mm"
-              }
+  (c/xy-chart
+    {
+      (str cur1 " " "\nmin: " (format-cur (apply min cur1Closes)) "\nmax: " (format-cur (apply max cur1Closes)) "\naverage: " (format-cur (average cur1Closes)))
+      {
+        :x cur1Times
+        :y cur1Closes
+        :style { :marker-type :none }
+      }
+      (str cur2 "\nmin: " (format-cur(apply min cur2Closes)) "\nmax: " (format-cur (apply max cur2Closes)) "\naverage: " (format-cur (average cur2Closes)))
+      {
+        :x cur2Times
+        :y cur2Closes
+        :style { :marker-type :none }
+      }
+      (str cur1 " - " cur2)
+      {
+        :x cur2Times
+        :y (map - cur1Closes cur2Closes)
+        :style { :marker-type :none }
+      }
+    }
+    {
+      :width 1050
+      :height 400
+      :title (str "Comparison of " cur1 " and " cur2)
+      :x-axis { :title "Date" :ticks-visible? true :tick-mark-spacing-hint 20 }
+      :y-axis { :title "Price [$]" :decimal-pattern "######" :tick-mark-spacing-hint 20 }
+      :theme :ggplot2
+      :date-pattern "dd.MM.yyyy"
+    }
   )
-  ; )
 )
 
 (defn empty-chart []
-  (c/xy-chart { }
-              {
-                :width 800
-                :height 350
-                :title "Select crypto currencies to compare"
-                :x-axis {:title "Date"}
-                :y-axis { :title "Price [$]" :decimal-pattern "######" :tick-mark-spacing-hint 20}
-                :theme :ggplot2
-                :date-pattern "dd.MM.yyyy HH:mm"
-              }
+  (c/xy-chart
+    {}
+    {
+      :width 1050
+      :height 400
+      :title "Select crypto currencies to compare"
+      :x-axis { :title "Date" :ticks-visible? true :tick-mark-spacing-hint 20 }
+      :y-axis { :title "Price [$]" :decimal-pattern "######" :tick-mark-spacing-hint 20 }
+      :theme :ggplot2
+      :date-pattern "dd.MM.yyyy"
+    }
   )
 )
 
@@ -130,15 +141,10 @@
           ]
           [:div {:class "row"}
             [:div {:class "col-6"}
-              (label {:class "control-label"} "options" "Compare options:")
-              [:div#options {:class "form-group "}
-                [:div {:class "form-check form-check-inline"}
-                  (check-box {:class "form-check-input"} "comp1" false)
-                  (label {:class "form-check-label"} "comp1" "Difference")
-                ]
-                [:div {:class "form-check form-check-inline"}
-                  (check-box {:class "form-check-input"} "comp2" false)
-                  (label {:class "form-check-label"} "comp2" "Price Rate")
+              [:div {:class "form-group"}
+                (label {:class "control-label"} "range" "Range of days")
+                [:select#cur1 {:name "range", :class "form-control"}
+                  (select-options [["7" 7] ["30" 30] ["365" 365]])
                 ]
               ]
             ]
@@ -185,11 +191,11 @@
 
 (defroutes home-routes
   (GET "/" [] (home-page))
-  (GET "/compare" [cur1 cur2 comp1 comp2]
-    (let [respCur1Times   (get-data-times (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur1 "&tsym=USD&limit=60&aggregate=1")))
-          respCur1Closes  (get-data-closes (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur1 "&tsym=USD&limit=60&aggregate=1")))
-          respCur2Times   (get-data-times (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur2 "&tsym=USD&limit=60&aggregate=1")))
-          respCur2Closes  (get-data-closes (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur2 "&tsym=USD&limit=60&aggregate=1")))]
+  (GET "/compare" [cur1 cur2 range]
+    (let [respCur1Times   (get-data-times (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur1 "&tsym=USD&limit=" range "&aggregate=1")))
+          respCur1Closes  (get-data-closes (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur1 "&tsym=USD&limit=" range "&aggregate=1")))
+          respCur2Times   (get-data-times (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur2 "&tsym=USD&limit=" range "&aggregate=1")))
+          respCur2Closes  (get-data-closes (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur2 "&tsym=USD&limit=" range "&aggregate=1")))]
       (compare-page cur1 respCur1Times respCur1Closes cur2 respCur2Times respCur2Closes)
     )
   )
