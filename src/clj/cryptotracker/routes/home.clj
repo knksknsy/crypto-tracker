@@ -15,6 +15,57 @@
 
 (import (org.apache.commons.codec.binary Base64))
 
+(def url1  "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=1") ;BTC-USD
+(def url2  "https://min-api.cryptocompare.com/data/histoday?fsym=ETH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
+(def url3  "https://min-api.cryptocompare.com/data/histoday?fsym=DASH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
+(def url4 "https://www.cryptocompare.com/api/data/coinlist/"); Coinlist
+
+(defn chart [cur1 cur1Times cur1Closes cur2 cur2Times cur2Closes]
+  ; (let [resp1 (http/get url1)
+  ;      resp2 (http/get url2)
+  ;      resp3 (http/get url3)
+  ;      resp4 (http/get url4)]
+  (c/xy-chart {
+                ;"Cur 1" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [2 3] ]
+                ;"Cur 1" [ [(prepare-data-for-chart-wo-comma2 data)] [(prepare-data-for-chart-wo-comma2 data)] ]
+                ;"Cur 1"  { :x (prepare-data-for-chart-wo-comma resp1) :y (prepare-data-for-chart-wo-comma2 resp1) }
+                (str cur1 " ")  { :x cur1Times
+                                  :y cur1Closes
+                                  :style { :marker-type :none } }
+                (str cur2)  { :x cur2Times
+                              :y cur2Closes
+                              :style { :marker-type :none }}
+                ;"Cur 2" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [3 4] ]
+                ;"Dif" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [5 6] ]
+                ;"Rates" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [7 8] ]
+              }
+              {
+                :width 800
+                :height 350
+                :title (str "Comparison of " cur1 " and " cur2)
+                :x-axis {:title "Date"}
+                :y-axis { :title "Price [$]" :decimal-pattern "######" :tick-mark-spacing-hint 20}
+                :theme :ggplot2
+                :date-pattern "dd.MM.yyyy HH:mm"
+              }
+  )
+  ; )
+)
+
+(defn empty-chart []
+  (c/xy-chart { }
+              {
+                :width 800
+                :height 350
+                :title "Select crypto currencies to compare"
+                :x-axis {:title "Date"}
+                :y-axis { :title "Price [$]" :decimal-pattern "######" :tick-mark-spacing-hint 20}
+                :theme :ggplot2
+                :date-pattern "dd.MM.yyyy HH:mm"
+              }
+  )
+)
+
 (defn app-head
   ([]
     (h/html [:head
@@ -130,56 +181,6 @@
 
 (defn get-data-closes [data]
   (map :close ((json/read-str (@data :body) :key-fn keyword) :Data))
-)
-
-(def url1  "https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=60&aggregate=1") ;BTC-USD
-(def url2  "https://min-api.cryptocompare.com/data/histoday?fsym=ETH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
-(def url3  "https://min-api.cryptocompare.com/data/histoday?fsym=DASH&tsym=USD&limit=60&aggregate=1") ;ETH-USD
-(def url4 "https://www.cryptocompare.com/api/data/coinlist/"); Coinlist
-
-(defn chart [cur1 cur1Times cur1Closes cur2 cur2Times cur2Closes]
-  ; (let [resp1 (http/get url1)
-  ;      resp2 (http/get url2)
-  ;      resp3 (http/get url3)
-  ;      resp4 (http/get url4)]
-  (c/xy-chart {
-                ;"Cur 1" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [2 3] ]
-                ;"Cur 1" [ [(prepare-data-for-chart-wo-comma2 data)] [(prepare-data-for-chart-wo-comma2 data)] ]
-                ;"Cur 1"  { :x (prepare-data-for-chart-wo-comma resp1) :y (prepare-data-for-chart-wo-comma2 resp1) }
-                (str cur1 " ")  { :x cur1Times
-                                  :y cur1Closes
-                                  :style { :marker-type :none } }
-                (str cur2)  { :x cur2Times
-                              :y cur2Closes
-                              :style { :marker-type :none }}
-                ;"Cur 2" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [3 4] ]
-                ;"Dif" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [5 6] ]
-                ;"Rates" [ [(tc/to-date 1502841600000) (tc/to-date 1502842600000)] [7 8] ]
-              }
-              {
-                :width 800
-                :height 350
-                :title (str "Comparison of " cur1 " and " cur2)
-                :x-axis {:title "Date"}
-                :y-axis { :title "Price [$]" :decimal-pattern "######" :tick-mark-spacing-hint 20}
-                :theme :ggplot2
-                :date-pattern "dd.MM.yyyy HH:mm"
-              }
-  )
-  ; )
-)
-
-(defn empty-chart []
-  (c/xy-chart { }
-              {
-                :width 800
-                :height 350
-                :x-axis {:title "Date"}
-                :y-axis { :title "Price [$]" :decimal-pattern "######" :tick-mark-spacing-hint 20}
-                :theme :ggplot2
-                :date-pattern "dd.MM.yyyy HH:mm"
-              }
-  )
 )
 
 (defroutes home-routes
