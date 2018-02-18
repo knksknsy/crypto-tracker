@@ -16,15 +16,15 @@
 (import (org.apache.commons.codec.binary Base64))
 
 (defn prepare-data-for-exlist [data]
-     (sort (map vector
-       (seq (map :FullName (vals ((json/read-str (@data :body) :key-fn keyword) :Data))))
-       (seq (map :Symbol (vals ((json/read-str (@data :body) :key-fn keyword) :Data))))
-   ))
+  (sort (map vector
+    (seq (map :FullName (vals ((json/read-str (@data :body) :key-fn keyword) :Data))))
+    (seq (map :Symbol (vals ((json/read-str (@data :body) :key-fn keyword) :Data))))
+  ))
 )
   ;(str \[ (clojure.string/join ", " (map :FullName (vals ((json/read-str (@data :body) :key-fn keyword) :Data)))))
   ;(str \[ (clojure.string/join ", " (map :Symbol (vals ((json/read-str (@data :body) :key-fn keyword) :Data)))))
 
-
+(def apiBaseUrl "https://min-api.cryptocompare.com/data/")
 (def coinsUrl "https://www.cryptocompare.com/api/data/coinlist/"); Coinlist
 
 (defn average [numbers]
@@ -148,10 +148,35 @@
           ]
           [:div {:class "row"}
             [:div {:class "col-6"}
-              [:div {:class "form-group"}
-                (label {:class "control-label"} "range" "Range of days")
-                [:select#cur1 {:name "range", :class "form-control"}
-                  (select-options [["7" 7] ["30" 30] ["365" 365]])
+              [:div {:class "row"}
+                [:div {:class "col"}
+                  [:div {:class "form-group"}
+                    (label {:class "control-label"} "range" "Type of range")
+                    [:div {:class "radio"}
+                      [:label
+                        [:input#minutes {:type "radio" :name "range" :value "histominute" :class "from-control"}]
+                        "minutes"
+                      ]
+                    ]
+                    [:div {:class "radio"}
+                      [:label
+                        [:input#hours {:type "radio" :name "range" :value "histohour" :class "from-control"}]
+                        "hours"
+                      ]
+                    ]
+                    [:div {:class "radio"}
+                      [:label
+                        [:input#days {:type "radio" :name "range" :value "histoday" :checked "checked" :class "from-control"}]
+                        "days"
+                      ]
+                    ]
+                  ]
+                ]
+                [:div {:class "col"}
+                  [:div {:class "form-group"}
+                    (label {:class "control-label"} "limit" "Limit of range")
+                    [:input#limit {:type "number" :min 1 :step 1 :name "limit" :class "form-control" :value 30}]
+                  ]
                 ]
               ]
             ]
@@ -200,11 +225,11 @@
 
 (defroutes home-routes
   (GET "/" [] (home-page (prepare-data-for-exlist (http/get coinsUrl))))
-  (GET "/compare" [cur1 cur2 range]
-    (let [respCur1Times   (get-data-times (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur1 "&tsym=USD&limit=" range "&aggregate=1")))
-          respCur1Closes  (get-data-closes (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur1 "&tsym=USD&limit=" range "&aggregate=1")))
-          respCur2Times   (get-data-times (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur2 "&tsym=USD&limit=" range "&aggregate=1")))
-          respCur2Closes  (get-data-closes (http/get (str "https://min-api.cryptocompare.com/data/histoday?fsym=" cur2 "&tsym=USD&limit=" range "&aggregate=1")))]
+  (GET "/compare" [cur1 cur2 range limit]
+    (let [respCur1Times   (get-data-times (http/get (str apiBaseUrl range "?fsym=" cur1 "&tsym=USD&limit=" limit "&aggregate=1")))
+          respCur1Closes  (get-data-closes (http/get (str apiBaseUrl range "?fsym=" cur1 "&tsym=USD&limit=" limit "&aggregate=1")))
+          respCur2Times   (get-data-times (http/get (str apiBaseUrl range "?fsym=" cur2 "&tsym=USD&limit=" limit "&aggregate=1")))
+          respCur2Closes  (get-data-closes (http/get (str apiBaseUrl range "?fsym=" cur2 "&tsym=USD&limit=" limit "&aggregate=1")))]
       (compare-page cur1 respCur1Times respCur1Closes cur2 respCur2Times respCur2Closes (prepare-data-for-exlist (http/get coinsUrl)))
     )
   )
