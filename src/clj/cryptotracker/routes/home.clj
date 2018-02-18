@@ -16,71 +16,114 @@
 (import (org.apache.commons.codec.binary Base64))
 
 (defn prepare-data-for-exlist [data]
-  (sort (map vector
-    (seq (map :FullName (vals ((json/read-str (@data :body) :key-fn keyword) :Data))))
-    (seq (map :Symbol (vals ((json/read-str (@data :body) :key-fn keyword) :Data))))
-  ))
+  (let [coins (vals ((json/read-str (@data :body) :key-fn keyword) :Data))]
+    (sort (map vector
+      (seq (map :FullName (filter #(not= (:Algorithm %) "N/A") coins)))
+      (seq (map :Symbol (filter #(not= (:Algorithm %) "N/A") coins)))
+    ))
+  )
 )
-  ;(str \[ (clojure.string/join ", " (map :FullName (vals ((json/read-str (@data :body) :key-fn keyword) :Data)))))
-  ;(str \[ (clojure.string/join ", " (map :Symbol (vals ((json/read-str (@data :body) :key-fn keyword) :Data)))))
 
 (def apiBaseUrl "https://min-api.cryptocompare.com/data/")
-(def coinsUrl "https://www.cryptocompare.com/api/data/coinlist/"); Coinlist
+(def coinsUrl "https://www.cryptocompare.com/api/data/coinlist/")
 
 (defn average [numbers]
   (/ (apply + numbers) (count numbers))
 )
 
 (defn format-cur [number]
-  (str (format "%.2f" number) " $")
-)
-
-(defn chart [cur1 cur1Times cur1Closes cur2 cur2Times cur2Closes]
-  (c/xy-chart
-    {
-      (str cur1 " " "\nmin: " (format-cur (apply min cur1Closes)) "\nmax: " (format-cur (apply max cur1Closes)) "\naverage: " (format-cur (average cur1Closes)))
-      {
-        :x cur1Times
-        :y cur1Closes
-        :style { :marker-type :none }
-      }
-      (str cur2 "\nmin: " (format-cur(apply min cur2Closes)) "\nmax: " (format-cur (apply max cur2Closes)) "\naverage: " (format-cur (average cur2Closes)))
-      {
-        :x cur2Times
-        :y cur2Closes
-        :style { :marker-type :none }
-      }
-      (str cur1 " - " cur2)
-      {
-        :x cur2Times
-        :y (map - cur1Closes cur2Closes)
-        :style { :marker-type :none }
-      }
-    }
-    {
-      :width 1050
-      :height 400
-      :title (str "Comparison of " cur1 " and " cur2)
-      :x-axis { :title "Date" :ticks-visible? true :tick-mark-spacing-hint 20 }
-      :y-axis { :title "Price [$]" :decimal-pattern "######" :tick-mark-spacing-hint 20 }
-      :theme :ggplot2
-      :date-pattern "dd.MM.yyyy"
-    }
+  (if (or (double? number) (float? number))
+    (str (format "%.2f" number) " $")
+    (str number " $")
   )
 )
 
-(defn empty-chart []
-  (c/xy-chart
-    {}
-    {
-      :width 1050
-      :height 400
-      :title "Select crypto currencies to compare"
-      :x-axis { :title "Date" :ticks-visible? true :tick-mark-spacing-hint 20 }
-      :y-axis { :title "Price [$]" :decimal-pattern "######" :tick-mark-spacing-hint 20 }
-      :theme :ggplot2
-      :date-pattern "dd.MM.yyyy"
-    }
+(defn check-min [data]
+  (if (> (count data) 0)
+    (format-cur (apply min data))
+    (str "N/A")
+  )
+)
+
+(defn check-max [data]
+  (if (> (count data) 0)
+    (format-cur (apply max data))
+    (str "N/A")
+  )
+)
+
+(defn check-average [data]
+  (if (> (count data) 0)
+    (format-cur (average data))
+    (str "N/A")
+  )
+)
+
+(defn chart [cur1 cur1Times cur1Closes cur2 cur2Times cur2Closes]
+  (if (and (> (count cur1Closes) 0) (> (count cur2Closes) 0))
+    (c/xy-chart
+      {
+        (str cur1 " " "\nmin: " (check-min cur1Closes) "\nmax: " (check-max cur1Closes) "\naverage: " (check-average cur1Closes))
+        {
+          :x cur1Times
+          :y cur1Closes
+          :style { :marker-type :none }
+        }
+        (str cur2 "\nmin: " (check-min cur2Closes) "\nmax: " (check-max cur2Closes) "\naverage: " (check-average cur2Closes))
+        {
+          :x cur2Times
+          :y cur2Closes
+          :style { :marker-type :none }
+        }
+        (str cur1 " - " cur2)
+        {
+          :x cur2Times
+          :y (map - cur1Closes cur2Closes)
+          :style { :marker-type :none }
+        }
+      }
+      {
+        :width 1050
+        :height 400
+        :title (str "Comparison of " cur1 " and " cur2)
+        :x-axis { :title "Date" :ticks-visible? true :tick-mark-spacing-hint 20 }
+        :y-axis { :title "Price [$]" :decimal-pattern "######.##" :tick-mark-spacing-hint 20 }
+        :theme :ggplot2
+        :date-pattern "dd.MM.yyyy"
+      }
+    )
+    (empty-chart (str "No data available for crypto currency " cur1 " or " cur2))
+  )
+)
+
+(defn empty-chart
+  ([]
+    (c/xy-chart
+      {}
+      {
+        :width 1050
+        :height 400
+        :title "Select crypto currencies to compare"
+        :x-axis { :title "Date" :ticks-visible? true :tick-mark-spacing-hint 20 }
+        :y-axis { :title "Price [$]" :decimal-pattern "######.##" :tick-mark-spacing-hint 20 }
+        :theme :ggplot2
+        :date-pattern "dd.MM.yyyy"
+      }
+    )
+  )
+  ([title]
+    (c/xy-chart
+      {}
+      {
+        :width 1050
+        :height 400
+        :title title
+        :x-axis { :title "Date" :ticks-visible? true :tick-mark-spacing-hint 20 }
+        :y-axis { :title "Price [$]" :decimal-pattern "######.##" :tick-mark-spacing-hint 20 }
+        :theme :ggplot2
+        :date-pattern "dd.MM.yyyy"
+      }
+    )
   )
 )
 
