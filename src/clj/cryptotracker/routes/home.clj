@@ -59,6 +59,37 @@
   )
 )
 
+(defn empty-chart
+  ([]
+    (c/xy-chart
+      {}
+      {
+        :width 1050
+        :height 400
+        :title "Select crypto currencies to compare"
+        :x-axis { :title "Date" :ticks-visible? true :tick-mark-spacing-hint 20 }
+        :y-axis { :title "Price [$]" :decimal-pattern "######.##" :tick-mark-spacing-hint 20 }
+        :theme :ggplot2
+        :date-pattern "dd.MM.yyyy"
+      }
+    )
+  )
+  ([title]
+    (c/xy-chart
+      {}
+      {
+        :width 1050
+        :height 400
+        :title title
+        :x-axis { :title "Date" :ticks-visible? true :tick-mark-spacing-hint 20 }
+        :y-axis { :title "Price [$]" :decimal-pattern "######.##" :tick-mark-spacing-hint 20 }
+        :theme :ggplot2
+        :date-pattern "dd.MM.yyyy"
+      }
+    )
+  )
+)
+
 (defn chart [cur1 cur1Times cur1Closes cur2 cur2Times cur2Closes]
   (if (and (> (count cur1Closes) 0) (> (count cur2Closes) 0))
     (c/xy-chart
@@ -93,37 +124,6 @@
       }
     )
     (empty-chart (str "No data available for crypto currency " cur1 " or " cur2))
-  )
-)
-
-(defn empty-chart
-  ([]
-    (c/xy-chart
-      {}
-      {
-        :width 1050
-        :height 400
-        :title "Select crypto currencies to compare"
-        :x-axis { :title "Date" :ticks-visible? true :tick-mark-spacing-hint 20 }
-        :y-axis { :title "Price [$]" :decimal-pattern "######.##" :tick-mark-spacing-hint 20 }
-        :theme :ggplot2
-        :date-pattern "dd.MM.yyyy"
-      }
-    )
-  )
-  ([title]
-    (c/xy-chart
-      {}
-      {
-        :width 1050
-        :height 400
-        :title title
-        :x-axis { :title "Date" :ticks-visible? true :tick-mark-spacing-hint 20 }
-        :y-axis { :title "Price [$]" :decimal-pattern "######.##" :tick-mark-spacing-hint 20 }
-        :theme :ggplot2
-        :date-pattern "dd.MM.yyyy"
-      }
-    )
   )
 )
 
